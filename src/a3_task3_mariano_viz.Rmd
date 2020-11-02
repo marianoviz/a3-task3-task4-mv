@@ -1,0 +1,135 @@
+---
+title: "a3_task3_mariano_viz"
+author: "Mariano Viz"
+date: "01/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(here)
+library(janitor)
+library(kableExtra)
+library(lubridate)
+
+```
+
+
+
+## Summary
+
+In this report I...
+
+## Citation
+
+[Santa Barbara Coastal LTER and D. Reed. 2020. SBC LTER: Reef: Long-term experiment: Kelp removal: Urchin size frequency distribution ver 20. Environmental Data Initiative](https://doi.org/10.6073/pasta/5a1e9ef03aa47bd2225c0bb98a02a63b)
+
+
+## Read in the data using `here()` and update the column names to lower snake case using `clear_names()`
+
+```{r}
+
+urchins_data <- read_csv(here("data", "urchins.csv")) %>% 
+  clean_names()
+
+```
+
+
+
+
+# **Section 1**: Size comparisons, purple and red urchins
+
+### **Section 1.1**: Exploratory data visualization
+
+In this section...
+
+```{r}
+
+ggplot(data = urchins_data, aes(x = size)) +
+  geom_histogram(bins = 18) +
+  facet_wrap(~common_name) +
+  labs(x = "Urchin diameter (cm)",
+       y = "Count",
+       title = "Purple and Red Urchin diameter")
+
+```
+
+
+
+```{r}
+ggplot(data = urchins_data, aes(x = common_name, y = size)) +
+  geom_boxplot() +
+  labs(x = "Common name",
+       y = "Urchin diameter (cm)",
+       title = "Purple and Red Urchin diameter")
+
+```
+
+### **Section 1.2**: Summary Statistics
+
+In this section...
+
+```{r}
+
+urchins_stats <- urchins_data %>% 
+  group_by(common_name) %>% 
+  summarise(mean_size = mean(size),
+            median_size = median(size),
+            sd_size = sd(size),
+            n = n()) %>%
+  kbl()%>% 
+  kable_styling()
+
+urchins_stats
+
+```
+
+
+Below where your exploratory graphs and table appear, add 2 - 3 sentences briefly describing your overall takeaways about how the size (distribution, central tendency, spread, etc.) compare between the two species of urchins (again, here we are ignoring site and treatment as a variable). Help to contextualize any differences you observe - for example, what is the actual and % difference in mean urchin diameter between the species? 
+
+
+
+
+# **Section 2**: Exploration of Purple Urchin counts by site and year
+
+## **Section 2.1**: Data Wrangling
+
+In this section...
+
+
+```{r}
+
+purple_urchins <- urchins_data %>% 
+  filter(common_name == "Purple Urchin") %>% 
+  mutate(date = mdy(date)) %>% 
+  mutate(year = year(date)) %>% 
+  mutate(site_full = case_when(site == "NAPL" ~ "Naples Reef",
+                               site == "AQUE" ~ "Arroyo Quemado Reef",
+                               site == "CARP" ~ "Carpinteria Reef",
+                               site == "MOHK" ~ "Mohawk Reef",
+                               site == "IVEE" ~ "Isla Vista Reef"))
+
+```
+
+
+## **Section 2.2**: Totalnumber of Purple Urchins observed by site and year
+
+In this section...
+
+```{r}
+
+purple_stats <- purple_urchins %>% 
+  count(site_full, year)
+
+ggplot(data = purple_stats, aes(x = year, y = n)) +
+  geom_col() +
+  facet_wrap(~site_full) +
+  labs(x = "Year",
+       y = "Observations",
+       title = "Total number of Purple Urchins observed by site and year")
+
+
+```
+
