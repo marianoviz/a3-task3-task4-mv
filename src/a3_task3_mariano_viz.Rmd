@@ -20,7 +20,7 @@ library(lubridate)
 
 ## Summary
 
-In this report I...
+In this report, I first compare purple and red urchins diameters. Then, I explore purple urchin counts by site and year.
 
 ## Citation
 
@@ -41,9 +41,11 @@ urchins_data <- read_csv(here("data", "urchins.csv")) %>%
 
 # **Section 1**: Size comparisons, purple and red urchins
 
+In this section, I compare purple and red urchins diameters using data visualization, descriptive statistics and performing a two-sample t-test.
+
 ### **Section 1.1**: Exploratory data visualization
 
-In this section...
+Here, I compare the distribution of purple and red urchins diameters using a faceted histogram and a boxplot.
 
 ```{r}
 
@@ -69,7 +71,8 @@ ggplot(data = urchins_data, aes(x = common_name, y = size)) +
 
 ### **Section 1.2**: Summary Statistics
 
-In this section...
+Here, I create a table with some descriptive statistics (mean, median, and standard deviation) of the purple and red urchins diameters. 
+
 
 ```{r}
 
@@ -86,17 +89,49 @@ urchins_stats
 
 ```
 
+### **Section 1.3**: Size comparisons, purple and red urchins
 
-Below where your exploratory graphs and table appear, add 2 - 3 sentences briefly describing your overall takeaways about how the size (distribution, central tendency, spread, etc.) compare between the two species of urchins (again, here we are ignoring site and treatment as a variable). Help to contextualize any differences you observe - for example, what is the actual and % difference in mean urchin diameter between the species? 
+Here, I describe the observed differences between purple and red urchins diameters. To help contextualize,  I perform a two-sample t-test and I create a table with the mean values, mean difference, and mean percentage difference between purple and red urchins diameters.
+
+```{r}
+urchins_means <- urchins_data %>% 
+  group_by(common_name) %>% 
+  summarise(mean_size = mean(size)) %>% 
+  pivot_wider(names_from = common_name,
+              values_from = mean_size) %>% 
+  clean_names() %>% 
+  mutate(mean_diff = red_urchin - purple_urchin) %>% 
+  mutate(mean_diff_perc = mean_diff / red_urchin *100) %>% 
+  kbl()%>% 
+  kable_styling()
+  
+
+urchins_means
+
+purple_sample <- urchins_data %>% 
+  filter(common_name == "Purple Urchin") %>% 
+  pull(size)
+
+red_sample <- urchins_data %>% 
+  filter(common_name == "Red Urchin") %>% 
+  pull(size)
+
+t.test(x = purple_sample, red_sample)
 
 
+```
+
+From the data visualization we can see that observations are normally distributed. At the same time, because we have a really big sample size (way over 30) we can be confident that the distribution of means is going to be normal (Central Limit Theorem). 
+There is a marked difference between the means of purple and red urchins diameters (red urchins mean diameter is 34% higher than that of purple urchins) and the probability of having taken this samples from populations with the same mean is extremely low (p-value < 2.2e-16).   
 
 
-# **Section 2**: Exploration of Purple Urchin counts by site and year
+# **Section 2**: Exploration of purple urchin counts by site and year
 
-## **Section 2.1**: Data Wrangling
+In this section, I explore purple urchin counts by site and year.
 
-In this section...
+### **Section 2.1**: Data Wrangling
+
+Here, I create a subset of the urchins data that only includes observations for purple urchins. I also convert the date to class "Date" and create new columns containing the year and full name of the sites. 
 
 
 ```{r}
@@ -114,14 +149,15 @@ purple_urchins <- urchins_data %>%
 ```
 
 
-## **Section 2.2**: Totalnumber of Purple Urchins observed by site and year
+### **Section 2.2**: Total number of purple urchins observed by site and year
 
-In this section...
+Here, I use `count()` to get the number of purple urchins observed by site and year and then I make an exploratory graph of the counts of purple urchins recorded at each site over time.
 
 ```{r}
 
 purple_stats <- purple_urchins %>% 
   count(site_full, year)
+
 
 ggplot(data = purple_stats, aes(x = year, y = n)) +
   geom_col() +

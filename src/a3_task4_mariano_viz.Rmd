@@ -1,0 +1,153 @@
+---
+title: "a3_task4_mariano_viz"
+author: "Mariano Viz"
+date: "02/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(here)
+library(janitor)
+library(lubridate)
+library(kableExtra)
+
+```
+#Camparation of mean size of Purple Urchins in *control* (no giant kelp removal) or *annual* (annual kelp removal) sections of Naples Reef in January 2010
+
+
+## Summary
+
+In this report, I compare the the mean size of purple urchins in control or annual sections of Naples Reef in January 2010 using data visualization, descriptive statistics and performing a two-sample t-test. 
+
+
+## Citation
+
+[Santa Barbara Coastal LTER and D. Reed. 2020. SBC LTER: Reef: Long-term experiment: Kelp removal: Urchin size frequency distribution ver 20. Environmental Data Initiative](https://doi.org/10.6073/pasta/5a1e9ef03aa47bd2225c0bb98a02a63b)
+
+
+## Read in the data using `here()` and update the column names to lower snake case using `clear_names()`
+
+```{r}
+
+urchins_data <- read_csv(here("data", "urchins.csv")) %>% 
+  clean_names()
+
+```
+
+
+### **Section 1**: Data Wrangling
+
+Here, I wrangle the urchins data to only include Naples Reef observations for purple urchins observed in January 2010.
+
+
+```{r}
+
+purple_urchins_napl <- urchins_data %>% 
+  filter(site == "NAPL", common_name == "Purple Urchin") %>% 
+  mutate(date = mdy(date)) %>% 
+  mutate(year = year(date)) %>% 
+  mutate(month = month(date)) %>% 
+  filter(year == 2010, month == 1)
+  
+
+```
+
+
+### **Section 1.2**: Exploratory Data Visualization
+
+Here, I create an exploratory histogram and a quantile-quantile plot.
+
+```{r}
+
+ggplot(data = purple_urchins_napl, aes(x = size)) +
+  geom_histogram(bins = 15) +
+  facet_wrap(~treatment) +
+  labs(x = "Urchin diameter (cm)",
+       y = "Count")
+
+
+```
+
+
+```{r}
+
+ggplot(data = purple_urchins_napl, aes(sample = size)) +
+  geom_qq() +
+  facet_wrap(~treatment)
+
+```
+
+
+
+From the exploratory visualization we can see a bell-shaped histogram reflecting a normal distribution (with a slight positive skew). This normal distribution is also shown by the quantile-quantile plot with an almost linear relationship.
+
+
+
+### **Section 1.3**: Summary Statistics
+
+Here, I create a table with some descriptive statistics (mean, median, and standard deviation) for the purple urchins observed in the Naples Reef in January 2010.
+
+
+```{r}
+
+purple_urchins_napl_stats <- purple_urchins_napl %>% 
+  group_by(treatment) %>% 
+  summarise(mean_size = mean(size),
+            median_size = median(size),
+            sd_size = sd(size),
+            n = n()) %>%
+  kbl()%>% 
+  kable_styling()
+
+purple_urchins_napl_stats
+
+```
+
+
+### **Section 1.4**: size means comparation for purple urchins in *control* (no giant kelp removal) and *annual* (annual kelp removal) sections of Naples Reef in January 2010
+
+Here, I create a table with the mean values, mean difference, and mean percentage difference for purple urchins in *control* (no giant kelp removal) and *annual* (annual kelp removal) sections of Naples Reef in January 2010. Then, I perform a two-sample t-test to compare means.
+
+
+
+```{r}
+purple_urchins_napl_means <- purple_urchins_napl %>% 
+  group_by(treatment)  %>% 
+  summarise(mean_size = mean(size)) %>% 
+  pivot_wider(names_from = treatment,
+              values_from = mean_size) %>% 
+  mutate(mean_diff = ANNUAL - CONTROL) %>% 
+  mutate(mean_diff_perc = mean_diff / ANNUAL *100) %>% 
+  kbl()%>% 
+  kable_styling()
+
+purple_urchins_napl_means
+
+
+annual_sample <- purple_urchins_napl %>% 
+  filter(treatment == "ANNUAL") %>% 
+  pull(size)
+
+control_sample <- purple_urchins_napl %>% 
+  filter(treatment == "CONTROL") %>%
+  pull(size)
+
+t.test(x = annual_sample, control_sample)
+
+
+```
+
+
+
+
+We can see that there is not a marked difference between the mean size of the different sections (the annual section mean diameter is 4.8% higher than that of the control section). The p-value is showing that there is a 25% chance of getting means that are at least this different, if they were drawn randomly from populations with the same mean. This is means that it's quite possible that the samples were taken from populations with the same mean.
+
+
+
+
+
+
+
